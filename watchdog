@@ -1,0 +1,55 @@
+int main(void)
+ {		
+	delay_init();	    	 //delay init 
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //NVIC INIT
+	uart_init(115200);	 //UART INIT
+ 	PAD_INIT();			     //Light Init
+	IWDG_Init(4,625);        
+	while(1)
+	{
+		if(USART_RX_END)
+		{					   
+			switch (USART_RX_BUF[5])
+			{
+				case Espresso:
+					CoffeeSelect(Espresso,USART_RX_BUF[8]);
+					break;
+				case Americano:
+					CoffeeSelect(Americano,USART_RX_BUF[8]);
+					break;
+				case Cappuccino:
+					CoffeeSelect(Cappuccino,USART_RX_BUF[8]);
+					break;
+				case Latte:		
+					CoffeeSelect(Latte,USART_RX_BUF[8]);
+					break;
+				default:
+					USART_RX_END=0;
+					USART_RX_STA=0;
+					break;
+			}
+			USART_RX_STA=0;
+			USART_RX_END=0;
+		}
+			delay_ms(10);  
+			IWDG_Feed();
+	}	 
+ }
+
+u8 timer_cnt=0;
+void TIM3_IRQHandler(void)   //TIM3
+{
+	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) 
+		{
+		TIM_ClearITPendingBit(TIM3, TIM_IT_Update  ); 
+			timer_cnt++;
+			if(timer_cnt>=200)
+			{
+				milk_send[6]=milk();
+				UART1_Send_Array(milk_send,7);
+				
+				beans_send[6]=beans();
+				UART1_Send_Array(beans_send,7);
+			}
+		}
+}
